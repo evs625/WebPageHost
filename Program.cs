@@ -4,6 +4,7 @@
 #nullable disable warnings
 
 using System;
+using System.Windows.Forms;
 using Spectre.Console.Cli;
 
 namespace WebPageHost;
@@ -16,6 +17,11 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        int? forwardedExitCode = ReuseWindowCoordinator.Initialize(args);
+        if (forwardedExitCode.HasValue) {
+            return forwardedExitCode.Value;
+        }
+
         var app = new CommandApp();
         app.Configure(config => {
             _ = config.SetApplicationName(Common.ProgramName);
@@ -34,6 +40,24 @@ internal static class Program
             _ = config.ValidateExamples();
         });
 
-        return app.Run(args);
+        EventHandler? idleHandler = null;
+        idleHandler = (s, e) => {
+            foreach (Form openForm in Application.OpenForms) {
+                if (openForm is MainForm form) {
+                    ReuseWindowCoordinator.Start(form);
+                    Application.Idle -= idleHandler;
+                    break;
+                }
+            }
+        };
+        Application.Idle += idleHandler;
+
+        try {
+            return app.Run(args);
+        }
+        finally {
+            Application.Idle -= idleHandler;
+            ReuseWindowCoordinator.Shutdown();
+        }
     }
 }
