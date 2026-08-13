@@ -165,6 +165,11 @@ internal sealed partial class OpenCommand
         [CommandOption("-e|--envname")]
         public string? EnvironmentName { get; init; }
 
+        [Description("Reuse an existing window for the same user data environment and navigate it to the requested URL.")]
+        [CommandOption("--reusewindow")]
+        [DefaultValue(false)]
+        public bool ReuseWindow { get; init; }
+
         [Description("Suppress SSL/TLS certificate errors.")]
         [CommandOption("--suppresscerterrors")]
         [DefaultValue(false)]
